@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 
@@ -19,7 +20,7 @@ enum City {
   BUCHAREST, NEAMT, URZICENI, IASI, VASLUI, HIRSOVA, EFORIE
 }
 
-class Node {
+class Node implements Comparable<Node>{
   City city;
   Node parent;
   int depth;
@@ -34,6 +35,17 @@ class Node {
     this.parent = parent;
     this.depth = depth;
     this.path_cost = path_cost;
+  }
+
+  @Override
+  public String toString() {
+    return city.toString();
+  }
+  
+  // This is needed for PriorityQueue to work with an object
+  @Override
+  public int compareTo(Node node) {
+    return Integer.valueOf(this.path_cost).compareTo(node.path_cost);
   }
 }
 
@@ -150,10 +162,19 @@ public class Romania {
     map.put(City.EFORIE, dest_map);
 
     // Search
-    bfs(City.ARAD, City.EFORIE);
+    bfs(City.ARAD, City.BUCHAREST);
+    
+    System.out.println("========");
     dfs(City.ARAD, City.BUCHAREST);
-    dls(City.ARAD, City.BUCHAREST, 10);
-    ids(City.ARAD, City.EFORIE);
+    
+    System.out.println("========");
+    dls(City.ARAD, City.BUCHAREST, 4);
+    
+    System.out.println("========");
+    ids(City.ARAD, City.BUCHAREST);
+    
+    System.out.println("========");
+    ucs(City.ARAD, City.BUCHAREST);
   }
 
   private static void bfs(City start, City goal) {
@@ -162,9 +183,13 @@ public class Romania {
     Queue<Node> frontier = new LinkedList<>();
     frontier.add(new Node(start));
 
+    int round = 0;
     while (!frontier.isEmpty()) {
+      System.out.print("Round " + (++round) + ": " + frontier);
+
       // Choose a node
       Node chosen_node = frontier.remove();
+      System.out.println(", " + chosen_node + " is chosen");
 
       // Check for solution
       if (chosen_node.city == goal) {
@@ -176,7 +201,8 @@ public class Romania {
           solution.add(0, backtrack_node.city);
         }
 
-        System.out.println("Found a solution: " + solution + " with path cost = " + chosen_node.path_cost);
+        System.out.println("Found a solution: " + solution + " with path cost = " + chosen_node.path_cost + ", depth = "
+            + chosen_node.depth);
         return;
       }
 
@@ -202,9 +228,13 @@ public class Romania {
     Queue<Node> frontier = Collections.asLifoQueue(new LinkedList<>()); // Just changed this line from bfs()
     frontier.add(new Node(start));
 
+    int round = 0;
     while (!frontier.isEmpty()) {
+      System.out.print("Round " + (++round) + ": " + frontier);
+
       // Choose a node
       Node chosen_node = frontier.remove();
+      System.out.println(", " + chosen_node + " is chosen");
 
       // Check for solution
       if (chosen_node.city == goal) {
@@ -216,7 +246,8 @@ public class Romania {
           solution.add(0, backtrack_node.city);
         }
 
-        System.out.println("Found a solution: " + solution + " with path cost = " + chosen_node.path_cost);
+        System.out.println("Found a solution: " + solution + " with path cost = " + chosen_node.path_cost + ", depth = "
+            + chosen_node.depth);
         return;
       }
 
@@ -242,9 +273,13 @@ public class Romania {
     Queue<Node> frontier = Collections.asLifoQueue(new LinkedList<>());
     frontier.add(new Node(start));
 
+    int round = 0;
     while (!frontier.isEmpty()) {
+      System.out.print("Round " + (++round) + ": " + frontier);
+
       // Choose a node
       Node chosen_node = frontier.remove();
+      System.out.println(", " + chosen_node + " is chosen");
 
       // Check for solution
       if (chosen_node.city == goal) {
@@ -256,21 +291,28 @@ public class Romania {
           solution.add(0, backtrack_node.city);
         }
 
-        System.out.println("Found a solution: " + solution + " with path cost = " + chosen_node.path_cost);
+        System.out.println("Found a solution: " + solution + " with path cost = " + chosen_node.path_cost + ", depth = "
+            + chosen_node.depth);
         return;
       }
 
-      // Expand the selected node
-      if (chosen_node.depth < depth_limit) {  // Just add this line to dfs()
-        // Add the selected node to the explored set
-        explored.add(chosen_node.city);
+      // Add the selected node to the explored set
+      explored.add(chosen_node.city);
 
+      // Expand the selected node
+      if (chosen_node.depth < depth_limit) {
         for (Map.Entry<City, Integer> entry : map.get(chosen_node.city).entrySet()) {
           // Add the connected node only if it has not been explored
           if (!explored.contains(entry.getKey())) {
             frontier.add(
                 new Node(entry.getKey(), chosen_node, chosen_node.depth + 1, chosen_node.path_cost + entry.getValue()));
           }
+        }
+      } else {
+        explored.remove(chosen_node.city);
+        while (chosen_node.parent != null) {
+          chosen_node = chosen_node.parent;
+          explored.remove(chosen_node.city);
         }
       }
     }
@@ -280,15 +322,22 @@ public class Romania {
 
   private static void ids(City start, City goal) {
     System.out.println("Running IDS...");
-    int depth_limit = 0;    // Just add this line to dls()
-    while (true) {          // Just add this line to dls()
+    
+    int depth_limit = 0;
+    while (true) {
+      System.out.println("- Depth limit = " + depth_limit);
+      
       Set<City> explored = new HashSet<>();
       Queue<Node> frontier = Collections.asLifoQueue(new LinkedList<>());
       frontier.add(new Node(start));
 
+      int round = 0;
       while (!frontier.isEmpty()) {
+        System.out.print("Round " + (++round) + ": " + frontier);
+        
         // Choose a node
         Node chosen_node = frontier.remove();
+        System.out.println(", " + chosen_node + " is chosen");
 
         // Check for solution
         if (chosen_node.city == goal) {
@@ -300,15 +349,16 @@ public class Romania {
             solution.add(0, backtrack_node.city);
           }
 
-          System.out.println("Found a solution: " + solution + " with path cost = " + chosen_node.path_cost);
+          System.out.println("Found a solution: " + solution + " with path cost = " + chosen_node.path_cost + ", depth = "
+              + chosen_node.depth);
           return;
         }
 
+        // Add the selected node to the explored set
+        explored.add(chosen_node.city);
+        
         // Expand the selected node
         if (chosen_node.depth < depth_limit) {
-          // Add the selected node to the explored set
-          explored.add(chosen_node.city);
-
           for (Map.Entry<City, Integer> entry : map.get(chosen_node.city).entrySet()) {
             // Add the connected node only if it has not been explored
             if (!explored.contains(entry.getKey())) {
@@ -316,10 +366,61 @@ public class Romania {
                   chosen_node.path_cost + entry.getValue()));
             }
           }
+        } else {
+          explored.remove(chosen_node.city);
+          while (chosen_node.parent != null) {
+            chosen_node = chosen_node.parent;
+            explored.remove(chosen_node.city);
+          }
         }
       }
 
       depth_limit++;
     }
+  }
+  
+  private static void ucs(City start, City goal) {
+    System.out.println("Running UCS...");
+    Set<City> explored = new HashSet<>();
+    PriorityQueue<Node> frontier = new PriorityQueue<>();
+    frontier.add(new Node(start));
+
+    int round = 0;
+    while (!frontier.isEmpty()) {
+      System.out.print("Round " + (++round) + ": " + frontier);
+
+      // Choose a node
+      Node chosen_node = frontier.remove();
+      System.out.println(", " + chosen_node + " is chosen");
+
+      // Check for solution
+      if (chosen_node.city == goal) {
+        Node backtrack_node = chosen_node;
+        List<City> solution = new LinkedList<>();
+        solution.add(backtrack_node.city);
+        while (backtrack_node.parent != null) {
+          backtrack_node = backtrack_node.parent;
+          solution.add(0, backtrack_node.city);
+        }
+
+        System.out.println("Found a solution: " + solution + " with path cost = " + chosen_node.path_cost + ", depth = "
+            + chosen_node.depth);
+        return;
+      }
+
+      // Add the selected node to the explored set
+      explored.add(chosen_node.city);
+
+      // Expand the selected node
+      for (Map.Entry<City, Integer> entry : map.get(chosen_node.city).entrySet()) {
+        // Add the connected node only if it has not been explored
+        if (!explored.contains(entry.getKey())) {
+          frontier.add(
+              new Node(entry.getKey(), chosen_node, chosen_node.depth + 1, chosen_node.path_cost + entry.getValue()));
+        }
+      }
+    }
+
+    System.out.println("Cannot find a solution");
   }
 }
